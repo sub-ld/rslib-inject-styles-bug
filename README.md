@@ -29,10 +29,13 @@ Uncaught ReferenceError: module is not defined
    This will show `module.id` references in the built ESM code.
 
 4. **Test in browser:**
-   Open `test.html` in a browser and check the console. You'll see:
+   Serve the files over HTTP (required for ES modules):
+   ```bash
+   python3 -m http.server 8000
    ```
-   Uncaught ReferenceError: module is not defined
-   ```
+   Then open http://localhost:8000/test-minimal.html and check the console.
+   
+   **Note**: The error may not occur in all environments due to webpack runtime handling, but the `module.id` reference in ESM context is the core issue.
 
 ## Expected Behavior
 

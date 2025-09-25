@@ -17,6 +17,7 @@
     "@rsbuild/plugin-react": "^1.4.1",
     "@rslib/core": "^0.14.0",
     "@types/react": "^18.3.24",
+    "@vanilla-extract/webpack-plugin": "^2.3.22",
     "react": "^18.3.1",
     "typescript": "^5.9.2"
   }
