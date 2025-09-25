@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "rslib build",
+    "dev": "cd consumer-app && vite",
+    "build:consumer": "cd consumer-app && vite build",
+    "preview": "cd consumer-app && vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,8 +20,15 @@
     "@rsbuild/plugin-react": "^1.4.1",
     "@rslib/core": "^0.14.0",
     "@types/react": "^18.3.24",
+    "@vanilla-extract/vite-plugin": "^5.1.1",
     "@vanilla-extract/webpack-plugin": "^2.3.22",
+    "@vitejs/plugin-react": "^5.0.3",
     "react": "^18.3.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "@types/react-dom": "^19.1.9",
+    "react-dom": "^19.1.1"
   }
 }

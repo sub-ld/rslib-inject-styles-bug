@@ -13,33 +13,62 @@ Uncaught ReferenceError: module is not defined
 ## Reproduction Steps
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Build the library:**
+
    ```bash
    npm run build
    ```
 
 3. **Check for problematic code:**
+
    ```bash
    grep -n "module\.id" dist/index.js
    ```
+
    This will show `module.id` references in the built ESM code.
 
-4. **Test in browser:**
+4. **Test with Vite consumer app (recommended):**
+   Start the Vite dev server that consumes the library:
+
+   ```bash
+   npm run dev
+   ```
+
+   Then open http://localhost:3000 and check the browser console for any errors.
+
+5. **Alternative: Test with static files:**
    Serve the files over HTTP (required for ES modules):
+
    ```bash
    python3 -m http.server 8000
    ```
+
    Then open http://localhost:8000/test-minimal.html and check the console.
-   
-   **Note**: The error may not occur in all environments due to webpack runtime handling, but the `module.id` reference in ESM context is the core issue.
+
+   **Note**: The error may not occur in all environments due to webpack runtime handling, but the `module.id` reference in ESM context is the core architectural issue.
 
 ## Expected Behavior
 
 ESM libraries with `injectStyles: true` should not contain CommonJS artifacts like `module.id`. The CSS injection should work without requiring a global `module` object.
+
+## Project Structure
+
+```
+rslib-inject-styles-bug/
+├── src/                    # Library source code
+├── dist/                   # Built library output
+├── consumer-app/           # Vite app that consumes the library
+│   ├── src/App.tsx        # Test app that imports the library
+│   └── index.html         # Vite entry point
+├── rslib.config.ts        # Library build configuration
+├── vite.config.ts         # Vite consumer app configuration
+└── test-*.html            # Static test files
+```
 
 ## Configuration
 
@@ -51,12 +80,12 @@ export default defineConfig({
     {
       bundle: true,
       dts: true,
-      format: 'esm',  // ESM format
+      format: "esm", // ESM format
     },
   ],
   output: {
-    injectStyles: true,  // This causes the issue
-    target: 'web',
+    injectStyles: true, // This causes the issue
+    target: "web",
   },
   plugins: [pluginReact()],
 });
