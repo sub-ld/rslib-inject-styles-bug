@@ -53,6 +53,13 @@ export default defineConfig({
 
 ESM libraries should not contain CommonJS artifacts like `module.id`. CSS injection should work without requiring a global `module` object.
 
-## Regression
+## Reproduction Status
 
-This worked in rslib 0.13.0 but broke in 0.14.0.
+✅ **Confirmed reproducible** with this minimal case:
+- Built bundle contains `module.id` at line 1638: `grep "module.id" dist/index.js`
+- Browser error: `ReferenceError: module is not defined at http://localhost:5173/@fs/.../dist/index.js:1656:3`
+- Consumer React app fails to render due to the error
+
+## Impact
+
+This prevents libraries from using both `injectStyles: true` and `format: 'esm'` simultaneously, forcing developers to choose between ESM compatibility and convenient style injection.
