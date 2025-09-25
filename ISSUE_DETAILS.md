@@ -56,6 +56,7 @@ ESM libraries should not contain CommonJS artifacts like `module.id`. CSS inject
 ## Reproduction Status
 
 ✅ **Confirmed reproducible** with this minimal case:
+
 - Built bundle contains `module.id` at line 1638: `grep "module.id" dist/index.js`
 - Browser error: `ReferenceError: module is not defined at http://localhost:5173/@fs/.../dist/index.js:1656:3`
 - Consumer React app fails to render due to the error
