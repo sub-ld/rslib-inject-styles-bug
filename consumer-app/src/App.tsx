@@ -1,5 +1,4 @@
 import React from "react";
-import { MyComponent } from "../../dist/index.js";
 
 function App() {
   return (
@@ -9,7 +8,6 @@ function App() {
 
       <div style={{ marginTop: "20px" }}>
         <h2>Component from Library:</h2>
-        <MyComponent>Click me!</MyComponent>
       </div>
 
       <div style={{ marginTop: "20px" }}>
