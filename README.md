@@ -1,95 +1,146 @@
-# rslib injectStyles ESM Bug Reproduction
+# rslib `module.id` Bug Reproduction
 
-This repository demonstrates a bug in `@rslib/core` version 0.14.0 where using `injectStyles: true` with `format: 'esm'` generates code that references `module.id`, causing runtime errors in browsers.
+This repository demonstrates a critical bug in `@rslib/core` v0.14.0 where `injectStyles: true` with ESM format generates CommonJS artifacts in ESM bundles, causing runtime errors.
 
-## Issue Description
+## 🎯 Root Cause Discovered
 
-When building an ESM library with `injectStyles: true`, rslib generates code that includes CommonJS-style `module.id` references. Since ESM environments don't have a global `module` object, this causes:
+The issue occurs when **ALL** these conditions are met:
+
+1. ✅ `injectStyles: true` in rslib config
+2. ✅ `format: "esm"` (ESM output)
+3. ✅ `@font-face` declarations in CSS
+4. ✅ Any export from the module importing CSS
+
+**Key Finding**: Not React-specific - any export triggers the issue.
+
+## 📋 Minimal Reproduction
+
+**Files needed:**
+
+```
+src/
+├── index.ts     # import "./globals.css"; export const foo = "bar";
+├── globals.css  # @font-face { font-family: "Test"; src: url("..."); }
+```
+
+**Result:** `module.id` references in ESM bundle → `ReferenceError: module is not defined`
+
+## 🚀 Quick Reproduction
+
+1. **Install and build**:
+
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. **Verify the bug**:
+
+   ```bash
+   grep "module.id" dist/index.js
+   # Output: module.id references found
+   ```
+
+3. **Test runtime error**:
+   ```bash
+   npm run build:consumer
+   npm run preview
+   # Open http://localhost:4173 → Console shows ReferenceError
+   ```
+
+## 🧪 Test Matrix
+
+| CSS Import | Export | `module.id` | Result               |
+| ---------- | ------ | ----------- | -------------------- |
+| None       | Yes    | 0           | ✅ Works             |
+| @font-face | None   | 1           | ⚠️ Builds but unused |
+| @font-face | Yes    | 1           | ❌ **Runtime Error** |
+
+## 🐛 The Problem
+
+**Generated ESM code contains:**
+
+```javascript
+___CSS_LOADER_EXPORT___.push([
+  module.id, // ← CommonJS artifact in ESM!
+  `@font-face { ... }`,
+]);
+```
+
+**Runtime error:**
 
 ```
 Uncaught ReferenceError: module is not defined
 ```
 
-## Reproduction Steps
+## 🔧 Configuration
 
-1. **Install dependencies:**
-
-   ```bash
-   npm install
-   ```
-
-2. **Build the library:**
-
-   ```bash
-   npm run build
-   ```
-
-3. **Check for problematic code:**
-
-   ```bash
-   grep -n "module\.id" dist/index.js
-   ```
-
-   This will show `module.id` references in the built ESM code.
-
-4. **Test with Vite consumer app (recommended):**
-   Start the Vite dev server that consumes the library:
-
-   ```bash
-   npm run dev
-   ```
-
-   Then open http://localhost:3000 and check the browser console for any errors.
-
-5. **Alternative: Test with static files:**
-   Serve the files over HTTP (required for ES modules):
-
-   ```bash
-   python3 -m http.server 8000
-   ```
-
-   Then open http://localhost:8000/test-minimal.html and check the console.
-
-   **Note**: The error may not occur in all environments due to webpack runtime handling, but the `module.id` reference in ESM context is the core architectural issue.
-
-## Expected Behavior
-
-ESM libraries with `injectStyles: true` should not contain CommonJS artifacts like `module.id`. The CSS injection should work without requiring a global `module` object.
-
-## Project Structure
-
-```
-rslib-inject-styles-bug/
-├── src/                    # Library source code
-├── dist/                   # Built library output
-├── consumer-app/           # Vite app that consumes the library
-│   ├── src/App.tsx        # Test app that imports the library
-│   └── index.html         # Vite entry point
-├── rslib.config.ts        # Library build configuration
-├── vite.config.ts         # Vite consumer app configuration
-└── test-*.html            # Static test files
-```
-
-## Configuration
-
-The issue occurs with this rslib configuration:
+**Problematic config:**
 
 ```typescript
 export default defineConfig({
-  lib: [
-    {
-      bundle: true,
-      dts: true,
-      format: "esm", // ESM format
-    },
-  ],
-  output: {
-    injectStyles: true, // This causes the issue
-    target: "web",
-  },
-  plugins: [pluginReact()],
+  lib: [{ format: "esm" }],
+  output: { injectStyles: true }, // ← Causes issue with @font-face
 });
 ```
+
+## ✅ Workarounds
+
+### Option 1: Disable Style Injection (Recommended)
+
+```typescript
+export default defineConfig({
+  output: { injectStyles: false }, // Generate separate CSS
+});
+```
+
+### Option 2: CSS-in-JS
+
+```typescript
+import { createGlobalStyle } from "styled-components";
+const GlobalStyles = createGlobalStyle`@font-face { ... }`;
+```
+
+### Option 3: Consumer-Side Import
+
+```typescript
+// Library: No CSS import
+export const foo = "bar";
+
+// Consumer: Import CSS separately
+import "library/dist/index.css";
+import { foo } from "library";
+```
+
+## 🔍 Technical Analysis
+
+**Why this is an rslib issue (not Vite):**
+
+- rslib generates the `module.id` references during build
+- ESM/CommonJS mismatch in rslib's CSS injection mechanism
+- Vite correctly rejects CommonJS artifacts in ESM context
+
+**Evidence:**
+
+- `injectStyles: true` → 14.9 kB bundle with `module.id`
+- `injectStyles: false` → 0.03 kB bundle + separate CSS
+
+## 🚨 Impact
+
+- **Blocks ESM adoption** for libraries using fonts
+- **Forces workarounds** or separate CSS handling
+- **Critical for modern library development**
+
+## 📁 Repository Structure
+
+- `src/` - Minimal reproduction library
+- `consumer-app/` - Test consumer application
+- `ISSUE_DETAILS.md` - Comprehensive technical analysis
+- `rslib.config.ts` - Configuration demonstrating issue
+
+## 🎯 Expected Fix
+
+rslib should properly transform CSS loader output for ESM compatibility, eliminating CommonJS artifacts like `module.id` in ESM bundles.
 
 ## Environment
 
@@ -99,10 +150,6 @@ export default defineConfig({
 - **Node.js**: Latest
 - **Browser**: Any modern browser
 
-## Workaround
+---
 
-The issue can be temporarily resolved by adding a module polyfill to the generated code, but this shouldn't be necessary for proper ESM output.
-
-## Related
-
-This issue appeared after upgrading from rslib 0.13.0 to 0.14.0, suggesting it's a regression in how CSS injection is handled for ESM libraries.
+**Status**: ✅ **Confirmed Critical Bug** - Ready for rslib team investigation

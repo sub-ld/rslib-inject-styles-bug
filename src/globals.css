@@ -1,0 +1,5 @@
+/* Minimal reproduction: @font-face triggers module.id issue */
+@font-face {
+  font-family: "TestFont";
+  src: url("data:font/woff2;base64,") format("woff2");
+}

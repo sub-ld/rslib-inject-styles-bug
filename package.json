@@ -19,16 +19,13 @@
     "@rsbuild/core": "^1.5.12",
     "@rsbuild/plugin-react": "^1.4.1",
     "@rslib/core": "^0.14.0",
-    "@types/react": "^18.3.24",
-    "@vanilla-extract/vite-plugin": "^5.1.1",
-    "@vanilla-extract/webpack-plugin": "^2.3.22",
+    "@types/react": "^19.1.13",
     "@vitejs/plugin-react": "^5.0.3",
-    "react": "^19.0.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.7"
   },
   "dependencies": {
-    "@types/react-dom": "^19.1.9",
+    "react": "^19.1.1",
     "react-dom": "^19.1.1"
   }
 }
